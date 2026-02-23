@@ -228,7 +228,7 @@ const updateAccountDetails = asyncHandler(async(req,res) => {
         req.user?._id,
         {
             $set:{
-                userName,
+                fullName,
                 email
             }
         },
@@ -303,7 +303,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
 })
 
 const getUserChannelProfile = asyncHandler(async(req,res) => {
-    const username = req.params
+    const {username} = req.params
 
     if(!username?.trim()){
         throw new ApiError(400,"Username is missing")
@@ -317,16 +317,16 @@ const getUserChannelProfile = asyncHandler(async(req,res) => {
         },
         {
             $lookup:{
-                from: "subcriptions",
+                from: "subscriptions",
                 localField: "_id",
                 foreignField: "channel",
-                as: "subscriber"
+                as: "subscribers"
             }
         },
         {
             $lookup:{
                 from:"subscriptions",
-                localFeild: "_id",
+                localField: "_id",
                 foreignField: "subscriber",
                 as: "subscribedTo"
             }   
@@ -376,10 +376,16 @@ const getUserChannelProfile = asyncHandler(async(req,res) => {
 
 const getWatchHistory = asyncHandler(async(req,res) => {
 
+    if (!req.user?._id) {
+        throw new ApiError(401, "Unauthorized")
+    }
+
+    const userId = new mongoose.Types.ObjectId(req.user._id)
+
     const user = await User.aggregate([
         {
             $match: {
-                id : new mongoose.Types.ObjectId(req.user._id)
+                id : userId
             }
         },
         {
@@ -417,10 +423,14 @@ const getWatchHistory = asyncHandler(async(req,res) => {
         }
     ])
 
+    if (!user.length) {
+        throw new ApiError(404, "User not found")
+    }
+
     return res
     .status(200)
     .json(
-        new ApiResponse(200,user[0].getWatchHistory,"Watch History fetched successfully")
+        new ApiResponse(200,user[0].watchHistory,"Watch History fetched successfully")
     )
 })
 
