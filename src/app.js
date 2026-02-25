@@ -24,10 +24,12 @@ app.use(cookieParser());
 //routes import
 import userRouter from "./routes/user.route.js"
 import healthcheckRouter from "./routes/healthcheck.route.js"
+import videoRouter from "./routes/video.route.js"
 
 //routes declaration
 app.use("/api/v1/health", healthcheckRouter)
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/videos", videoRouter)
 
 
 export default app;
