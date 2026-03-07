@@ -5,16 +5,48 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
-    const {videoId} = req.params
-    const {page = 1, limit = 10} = req.query
+    
+    const { videoId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid video ID")
+    }
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const comments = await Comment.find({ video: videoId })
+        .populate("owner", "username avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber);
+
+    const totalComments = await Comment.countDocuments({ video: videoId });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                comments,
+                pagination: {
+                    totalComments,
+                    currentPage: pageNumber,
+                    totalPages: Math.ceil(totalComments / limitNumber),
+                    limit: limitNumber,
+                },
+            },
+            "Comments fetched successfully"
+        )
+    )
 })
 
 const addComment = asyncHandler(async (req, res) => {
     
     const{videoId} = req.params;
     const {content} = req.body;
+
     if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video ID for comment")
     }
@@ -63,14 +95,14 @@ const updateComment = asyncHandler(async (req, res) => {
         }
     )
 
-    if (!tweet) {
+    if (!comment) {
         throw new ApiError(404, "Comment not found or unauthorized");
     }
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200,tweet,"Comment updated successfully")
+        new ApiResponse(200,comment,"Comment updated successfully")
     )
 })
 
