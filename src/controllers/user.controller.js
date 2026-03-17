@@ -88,6 +88,10 @@ const loginUser = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Username or email is required")
     }
 
+    if (!password) {
+        throw new ApiError(400, "Password is required")
+    }
+
     const user =await User.findOne({
         $or: [{username},{email}]
     })
@@ -148,7 +152,7 @@ const logoutUser = asyncHandler(async(req,res) => {
 })
 
 const refreshAccessToken = asyncHandler(async(req,res) => {
-    const incomingRefreshToken = req.cookie?.refreshToken || req.body?.refreshToken
+    const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
     if(!incomingRefreshToken){
         throw new ApiError(401,"Unauthorized Request") 
@@ -383,7 +387,7 @@ const getWatchHistory = asyncHandler(async(req,res) => {
     const user = await User.aggregate([
         {
             $match: {
-                id : userId
+                _id : userId
             }
         },
         {
