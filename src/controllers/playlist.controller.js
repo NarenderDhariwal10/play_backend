@@ -63,13 +63,61 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
 const deletePlaylist = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
-    // TODO: delete playlist
+    
+    if(!isValidObjectId(playlistId)){
+        throw new ApiError(400,"Invalid playlist Id")
+    }
+
+    const playlist = await Playlist.findOneAndDelete({
+            _id: plaulistId,
+            owner: req.user?._id  
+    });
+    
+    if (!playlist) {
+        throw new ApiError(404, "Playlist not found or unauthorized");
+    }
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,{},"Playlist deleted successfully")
+    )
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
     const {name, description} = req.body
-    //TODO: update playlist
+    
+    if(!isValidObjectId(playlistId)){
+        throw new ApiError(400,"Invalid playlist Id")
+    }
+
+    if(!name || !description){
+        throw new ApiError(400,"Name and description are required")
+    }
+
+    const playlist = await Playlist.findOneAndUpdate(
+        {
+            _id: playlistId,
+            owner: req.user?._id 
+        },
+        {
+            $set: { name,description }
+        },
+        {
+            new: true
+        }
+    )
+    
+    if (!playlist) {
+        throw new ApiError(404, "Playlist not found or unauthorized");
+    }
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,playlist,"Playlist updated successfully")
+    )
 })
 
 export {
